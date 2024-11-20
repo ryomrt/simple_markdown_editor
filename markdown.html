@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Markdown Editor with Mermaid Support (v1.2.0)</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f9;
+      color: #333;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    header {
+      background-color: #6200ee;
+      color: white;
+      padding: 10px 20px;
+      text-align: center;
+      font-size: 1.5em;
+    }
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 20px;
+      background-color: #f4f4f9;
+      border-bottom: 1px solid #ddd;
+    }
+    .controls button, .controls input[type="file"] {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    .controls button:hover {
+      background-color: #ddd;
+    }
+    .container {
+      display: flex;
+      flex-direction: row;
+      height: calc(100vh - 120px);
+    }
+    textarea, .preview {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ddd;
+      resize: none;
+      overflow-y: auto;
+    }
+    textarea {
+      border-right: 1px solid #ddd;
+    }
+    .preview {
+      background-color: white;
+    }
+    .dark-mode {
+      background-color: #333;
+      color: #ddd;
+    }
+    .dark-mode .preview {
+      background-color: #444;
+    }
+    footer {
+      text-align: center;
+      padding: 10px;
+      background-color: #6200ee;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <header>Markdown Editor with Mermaid Support (v1.2.0)</header>
+  <div class="controls">
+    <div>
+      <button id="loadSample">Load Sample</button>
+      <button id="copyHTML">Copy HTML</button>
+      <input type="file" id="loadFile" accept=".md">
+      <button id="saveMarkdown">Save Markdown</button>
+      <button id="saveHTML">Save HTML</button>
+    </div>
+    <button id="toggleTheme">Toggle Dark Mode</button>
+  </div>
+  <div class="container">
+    <textarea id="markdownInput" placeholder="Write your Markdown here..."></textarea>
+    <div id="htmlPreview" class="preview"></div>
+  </div>
+  <footer>&copy; 2024 Markdown Editor</footer>
+
+  <!-- 必要なスクリプトを読み込む -->
+  <script src="./marked.min.js"></script>
+  <script src="./mermaid.min.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const markdownInput = document.getElementById('markdownInput');
+      const htmlPreview = document.getElementById('htmlPreview');
+      const toggleThemeBtn = document.getElementById('toggleTheme');
+      const loadSampleBtn = document.getElementById('loadSample');
+      const copyHTMLBtn = document.getElementById('copyHTML');
+      const loadFileInput = document.getElementById('loadFile');
+      const saveMarkdownBtn = document.getElementById('saveMarkdown');
+      const saveHTMLBtn = document.getElementById('saveHTML');
+
+      // Mermaidの初期化
+      mermaid.initialize({ startOnLoad: false });
+
+      // MarkdownをHTMLに変換し、Mermaid記法を処理
+      const renderMarkdown = () => {
+        const markdownText = markdownInput.value;
+        let htmlContent = marked.parse(markdownText);
+
+        // Mermaid記法を検索して適切に置換
+        htmlContent = htmlContent.replace(
+          /<pre><code class="language-mermaid">([\s\S]*?)<\/code><\/pre>/g,
+          (match, mermaidCode) => {
+            return `<div class="mermaid">${mermaidCode}</div>`;
+          }
+        );
+
+        // HTMLプレビューに挿入
+        htmlPreview.innerHTML = htmlContent;
+
+        // Mermaid.jsで図を描画
+        try {
+          mermaid.init(undefined, htmlPreview.querySelectorAll('.mermaid'));
+        } catch (error) {
+          console.error('Mermaid rendering error:', error);
+        }
+      };
+
+      // 入力欄が変更されるたびにMarkdownをレンダリング
+      markdownInput.addEventListener('input', renderMarkdown);
+
+      // サンプルデータを挿入
+      loadSampleBtn.addEventListener('click', () => {
+        markdownInput.value = `
+# Markdown Editor with Mermaid Support
+
+This editor supports **Mermaid diagrams**. Try this example:
+
+\`\`\`mermaid
+graph TD
+  A[Start] --> B{Decision}
+  B -->|Yes| C[End]
+  B -->|No| D[Do something else]
+\`\`\`
+        `;
+        renderMarkdown();
+      });
+
+      // HTMLをクリップボードにコピー
+      copyHTMLBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(htmlPreview.innerHTML)
+          .then(() => alert('HTML copied to clipboard!'))
+          .catch((err) => alert('Failed to copy HTML: ' + err));
+      });
+
+      // Markdownファイルの読み込み
+      loadFileInput.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            markdownInput.value = e.target.result;
+            renderMarkdown();
+          };
+          reader.readAsText(file);
+        }
+      });
+
+      // Markdownをファイルとして保存
+      saveMarkdownBtn.addEventListener('click', () => {
+        const blob = new Blob([markdownInput.value], { type: 'text/markdown' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'markdown.md';
+        a.click();
+        URL.revokeObjectURL(a.href);
+      });
+
+      // HTMLをファイルとして保存
+      saveHTMLBtn.addEventListener('click', () => {
+        const blob = new Blob([htmlPreview.innerHTML], { type: 'text/html' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'preview.html';
+        a.click();
+        URL.revokeObjectURL(a.href);
+      });
+
+      // ダークモードの切り替え
+      toggleThemeBtn.addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        toggleThemeBtn.textContent = document.body.classList.contains('dark-mode')
+          ? 'Toggle Light Mode'
+          : 'Toggle Dark Mode';
+      });
+
+      // 初期レンダリング
+      renderMarkdown();
+    });
+  </script>
+</body>
+</html>
