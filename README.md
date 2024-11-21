@@ -1,8 +1,8 @@
-# Markdown Editor with Mermaid Support
+# ALPHA MODEL MARKDOWN EDITOR (v1.2.1)
 
 ## Overview
 This is a simple Markdown editor that supports Mermaid diagrams.
-It works on local file system.
+It works on local file system.(support alpha model environment)
 
 
 ## License

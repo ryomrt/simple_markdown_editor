@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Markdown Editor with Mermaid Support (v1.2.1)</title>
+  <title>ALPHA MODEL MARKDOWN EDITOR (v1.2.1)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -64,21 +64,25 @@
     }
     table {
       border-collapse: collapse;
-      border: 1px solid #6200ee;
+      border: 1px solid #ddd;
     }
     th, td {
-      border: 1px solid #6200ee;
+      border: 1px solid #ddd;
       padding: 8px;
     }
     .dark-mode table {
       border-color: #ccc;
-      border: 1px solid #ccc;
     }
     .dark-mode th, .dark-mode td {
-      border: 1px solid #ccc;
-      padding: 8px;
+      border-color: #ccc;
+      color: #ccc;
     }
-
+    .resize-handle {
+      width: 6px;
+      background-color: #ddd;
+      cursor: col-resize;
+      flex-shrink: 0;
+    }
     footer {
       text-align: center;
       padding: 10px;
@@ -88,7 +92,7 @@
   </style>
 </head>
 <body>
-  <header>Markdown Editor with Mermaid Support (v1.2.0)</header>
+  <header>Markdown Editor with Mermaid Support (v1.2.1)</header>
   <div class="controls">
     <div>
       <button id="loadSample">Load Sample</button>
@@ -96,11 +100,13 @@
       <input type="file" id="loadFile" accept=".md">
       <button id="saveMarkdown">Save Markdown</button>
       <button id="saveHTML">Save HTML</button>
+      <button id="saveAll">Save Markdown & HTML</button>
     </div>
     <button id="toggleTheme">Toggle Dark Mode</button>
   </div>
   <div class="container">
     <textarea id="markdownInput" placeholder="Write your Markdown here..."></textarea>
+    <div class="resize-handle"></div>
     <div id="htmlPreview" class="preview"></div>
   </div>
   <footer>&copy; 2024 Markdown Editor</footer>
@@ -119,6 +125,10 @@
       const loadFileInput = document.getElementById('loadFile');
       const saveMarkdownBtn = document.getElementById('saveMarkdown');
       const saveHTMLBtn = document.getElementById('saveHTML');
+      const saveAllBtn = document.getElementById('saveAll');
+      const resizeHandle = document.querySelector('.resize-handle');
+      let isDragging = false;
+      let startX, startWidth;
 
       // Mermaidの初期化
       mermaid.initialize({ startOnLoad: false });
@@ -184,6 +194,7 @@ graph TD
             renderMarkdown();
           };
           reader.readAsText(file);
+          event.target.value = ''; // リセット
         }
       });
 
@@ -207,6 +218,28 @@ graph TD
         URL.revokeObjectURL(a.href);
       });
 
+      // 上書き保存機能
+      const saveAll = () => {
+        const markdownBlob = new Blob([markdownInput.value], { type: 'text/markdown' });
+        const htmlBlob = new Blob([htmlPreview.innerHTML], { type: 'text/html' });
+        const markdownUrl = URL.createObjectURL(markdownBlob);
+        const htmlUrl = URL.createObjectURL(htmlBlob);
+
+        const markdownLink = document.createElement('a');
+        markdownLink.href = markdownUrl;
+        markdownLink.download = 'markdown.md';
+
+        const htmlLink = document.createElement('a');
+        htmlLink.href = htmlUrl;
+        htmlLink.download = 'preview.html';
+
+        markdownLink.click();
+        htmlLink.click();
+
+        URL.revokeObjectURL(markdownUrl);
+        URL.revokeObjectURL(htmlUrl);
+      };
+
       // ダークモードの切り替え
       toggleThemeBtn.addEventListener('click', () => {
         document.body.classList.toggle('dark-mode');
@@ -214,6 +247,40 @@ graph TD
           ? 'Toggle Light Mode'
           : 'Toggle Dark Mode';
       });
+
+      // 左右ペインの比率変更
+      resizeHandle.addEventListener('mousedown', (event) => {
+        isDragging = true;
+        startX = event.clientX;
+        startWidth = htmlPreview.offsetWidth;
+      });
+
+      document.addEventListener('mousemove', (event) => {
+        if (!isDragging) return;
+        const delta = event.clientX - startX;
+        const newWidth = Math.max(100, startWidth + delta);
+        htmlPreview.style.width = `${newWidth}px`;
+      });
+
+      document.addEventListener('mouseup', () => {
+        isDragging = false;
+      });
+
+      // ショートカットキーの設定
+      document.addEventListener('keydown', (event) => {
+        if (event.ctrlKey || event.metaKey) {
+          if (event.key === 's') {
+            event.preventDefault();
+            saveAll();
+          } else if (event.key === 'o') {
+            event.preventDefault();
+            loadFileInput.click();
+          }
+        }
+      });
+
+      // 上書き保存ボタンの追加
+      saveAllBtn.addEventListener('click', saveAll);
 
       // 初期レンダリング
       renderMarkdown();
