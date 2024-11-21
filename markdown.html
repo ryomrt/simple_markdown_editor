@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ALPHA MODEL MARKDOWN EDITOR (v1.2.1)</title>
+  <title>ALPHA MODEL MARKDOWN EDITOR (v1.2.2)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -92,7 +92,7 @@
   </style>
 </head>
 <body>
-  <header>Markdown Editor with Mermaid Support (v1.2.1)</header>
+  <header>ALPHA MODEL MARKDOWN EDITOR (v1.2.2)</header>
   <div class="controls">
     <div>
       <button id="loadSample">Load Sample</button>
@@ -210,7 +210,106 @@ graph TD
 
       // HTMLをファイルとして保存
       saveHTMLBtn.addEventListener('click', () => {
-        const blob = new Blob([htmlPreview.innerHTML], { type: 'text/html' });
+        const htmlContent = `
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ALPHA MODEL MARKDOWN EDITOR (v1.2.1)</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f9;
+      color: #333;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    header {
+      background-color: #6200ee;
+      color: white;
+      padding: 10px 20px;
+      text-align: center;
+      font-size: 1.5em;
+    }
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 20px;
+      background-color: #f4f4f9;
+      border-bottom: 1px solid #ddd;
+    }
+    .controls button, .controls input[type="file"] {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    .controls button:hover {
+      background-color: #ddd;
+    }
+    .container {
+      display: flex;
+      flex-direction: row;
+      height: calc(100vh - 120px);
+    }
+    textarea, .preview {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ddd;
+      resize: none;
+      overflow-y: auto;
+    }
+    textarea {
+      border-right: 1px solid #ddd;
+    }
+    .preview {
+      background-color: white;
+    }
+    .dark-mode {
+      background-color: #333;
+      color: #ddd;
+    }
+    .dark-mode .preview {
+      background-color: #444;
+    }
+    table {
+      border-collapse: collapse;
+      border: 1px solid #ddd;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+    .dark-mode table {
+      border-color: #ccc;
+    }
+    .dark-mode th, .dark-mode td {
+      border-color: #ccc;
+      color: #ccc;
+    }
+    .resize-handle {
+      width: 6px;
+      background-color: #ddd;
+      cursor: col-resize;
+      flex-shrink: 0;
+    }
+    footer {
+      text-align: center;
+      padding: 10px;
+      background-color: #6200ee;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  ${htmlPreview.innerHTML}
+</body>
+</html>
+`;
+        const blob = new Blob([htmlContent], { type: 'text/html' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = 'preview.html';
