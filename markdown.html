@@ -96,7 +96,7 @@
   <div class="controls">
     <div>
       <button id="loadSample">Load Sample</button>
-      <button id="copyHTML">Copy HTML</button>
+      <button id="copyMarkdown">Copy Markdown</button>
       <input type="file" id="loadFile" accept=".md">
       <button id="saveMarkdown">Save Markdown</button>
       <button id="saveHTML">Save HTML</button>
@@ -116,107 +116,15 @@
   <script src="./mermaid.min.js"></script>
 
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const markdownInput = document.getElementById('markdownInput');
-      const htmlPreview = document.getElementById('htmlPreview');
-      const toggleThemeBtn = document.getElementById('toggleTheme');
-      const loadSampleBtn = document.getElementById('loadSample');
-      const copyHTMLBtn = document.getElementById('copyHTML');
-      const loadFileInput = document.getElementById('loadFile');
-      const saveMarkdownBtn = document.getElementById('saveMarkdown');
-      const saveHTMLBtn = document.getElementById('saveHTML');
-      const saveAllBtn = document.getElementById('saveAll');
-      const resizeHandle = document.querySelector('.resize-handle');
-      let isDragging = false;
-      let startX, startWidth;
-
-      // Mermaidの初期化
-      mermaid.initialize({ startOnLoad: false });
-
-      // MarkdownをHTMLに変換し、Mermaid記法を処理
-      const renderMarkdown = () => {
-        const markdownText = markdownInput.value;
-        let htmlContent = marked.parse(markdownText);
-
-        // Mermaid記法を検索して適切に置換
-        htmlContent = htmlContent.replace(
-          /<pre><code class="language-mermaid">([\s\S]*?)<\/code><\/pre>/g,
-          (match, mermaidCode) => {
-            return `<div class="mermaid">${mermaidCode}</div>`;
-          }
-        );
-
-        // HTMLプレビューに挿入
-        htmlPreview.innerHTML = htmlContent;
-
-        // Mermaid.jsで図を描画
-        try {
-          mermaid.init(undefined, htmlPreview.querySelectorAll('.mermaid'));
-        } catch (error) {
-          console.error('Mermaid rendering error:', error);
-        }
-      };
-
-      // 入力欄が変更されるたびにMarkdownをレンダリング
-      markdownInput.addEventListener('input', renderMarkdown);
-
-      // サンプルデータを挿入
-      loadSampleBtn.addEventListener('click', () => {
-        markdownInput.value = `
-# Markdown Editor with Mermaid Support
-
-This editor supports **Mermaid diagrams**. Try this example:
-
-\`\`\`mermaid
-graph TD
-  A[Start] --> B{Decision}
-  B -->|Yes| C[End]
-  B -->|No| D[Do something else]
-\`\`\`
-        `;
-        renderMarkdown();
-      });
-
-      // HTMLをクリップボードにコピー
-      copyHTMLBtn.addEventListener('click', () => {
-        navigator.clipboard.writeText(htmlPreview.innerHTML)
-          .then(() => alert('HTML copied to clipboard!'))
-          .catch((err) => alert('Failed to copy HTML: ' + err));
-      });
-
-      // Markdownファイルの読み込み
-      loadFileInput.addEventListener('change', (event) => {
-        const file = event.target.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            markdownInput.value = e.target.result;
-            renderMarkdown();
-          };
-          reader.readAsText(file);
-          event.target.value = ''; // リセット
-        }
-      });
-
-      // Markdownをファイルとして保存
-      saveMarkdownBtn.addEventListener('click', () => {
-        const blob = new Blob([markdownInput.value], { type: 'text/markdown' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'markdown.md';
-        a.click();
-        URL.revokeObjectURL(a.href);
-      });
-
-      // HTMLをファイルとして保存
-      saveHTMLBtn.addEventListener('click', () => {
-        const htmlContent = `
+    function getHTML(innerHTML) {
+      const htmlContent = 
+      `
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ALPHA MODEL MARKDOWN EDITOR (v1.2.1)</title>
+  <title>Markdown Preview</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -306,11 +214,105 @@ graph TD
   </style>
 </head>
 <body>
-  ${htmlPreview.innerHTML}
+  ${innerHTML}
 </body>
 </html>
 `;
-        const blob = new Blob([htmlContent], { type: 'text/html' });
+      return htmlContent;
+    }
+      document.addEventListener('DOMContentLoaded', () => {
+        const markdownInput = document.getElementById('markdownInput');
+      const htmlPreview = document.getElementById('htmlPreview');
+      const toggleThemeBtn = document.getElementById('toggleTheme');
+      const loadSampleBtn = document.getElementById('loadSample');
+      const copyMarkdownBtn = document.getElementById('copyMarkdown');
+      const loadFileInput = document.getElementById('loadFile');
+      const saveMarkdownBtn = document.getElementById('saveMarkdown');
+      const saveHTMLBtn = document.getElementById('saveHTML');
+      const saveAllBtn = document.getElementById('saveAll');
+      const resizeHandle = document.querySelector('.resize-handle');
+      let isDragging = false;
+      let startX, startWidth;
+
+      // Mermaidの初期化
+      mermaid.initialize({ startOnLoad: false });
+
+      // MarkdownをHTMLに変換し、Mermaid記法を処理
+      const renderMarkdown = () => {
+        const markdownText = markdownInput.value;
+        let htmlContent = marked.parse(markdownText);
+
+        // Mermaid記法を検索して適切に置換
+        htmlContent = htmlContent.replace(
+          /<pre><code class="language-mermaid">([\s\S]*?)<\/code><\/pre>/g,
+          (match, mermaidCode) => {
+            return `<div class="mermaid">${mermaidCode}</div>`;
+          }
+        );
+
+        // HTMLプレビューに挿入
+        htmlPreview.innerHTML = htmlContent;
+
+        // Mermaid.jsで図を描画
+        try {
+          mermaid.init(undefined, htmlPreview.querySelectorAll('.mermaid'));
+        } catch (error) {
+          console.error('Mermaid rendering error:', error);
+        }
+      };
+
+      // 入力欄が変更されるたびにMarkdownをレンダリング
+      markdownInput.addEventListener('input', renderMarkdown);
+
+      // サンプルデータを挿入
+      loadSampleBtn.addEventListener('click', () => {
+        markdownInput.value = `
+# Markdown Editor with Mermaid Support
+
+This editor supports **Mermaid diagrams**. Try this example:
+
+\`\`\`mermaid
+graph TD
+  A[Start] --> B{Decision}
+  B -->|Yes| C[End]
+  B -->|No| D[Do something else]
+\`\`\`
+        `;
+        renderMarkdown();
+      });
+
+      // HTMLをクリップボードにコピー
+      copyMarkdownBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(markdownInput.value);
+      });
+
+      // Markdownファイルの読み込み
+      loadFileInput.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            markdownInput.value = e.target.result;
+            renderMarkdown();
+          };
+          reader.readAsText(file);
+          event.target.value = ''; // リセット
+        }
+      });
+
+      // Markdownをファイルとして保存
+      saveMarkdownBtn.addEventListener('click', () => {
+        const blob = new Blob([markdownInput.value], { type: 'text/markdown' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'markdown.md';
+        a.click();
+        URL.revokeObjectURL(a.href);
+      });
+
+      // HTMLをファイルとして保存
+      saveHTMLBtn.addEventListener('click', () => {
+        const blob = new Blob([getHTML(htmlPreview.innerHTML)], { type: 'text/html' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = 'preview.html';
@@ -321,7 +323,7 @@ graph TD
       // 上書き保存機能
       const saveAll = () => {
         const markdownBlob = new Blob([markdownInput.value], { type: 'text/markdown' });
-        const htmlBlob = new Blob([htmlPreview.innerHTML], { type: 'text/html' });
+        const htmlBlob = new Blob([getHTML(htmlPreview.innerHTML)], { type: 'text/html' });
         const markdownUrl = URL.createObjectURL(markdownBlob);
         const htmlUrl = URL.createObjectURL(htmlBlob);
 
