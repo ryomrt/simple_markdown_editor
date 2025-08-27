@@ -1,392 +1,413 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ALPHA MODEL MARKDOWN EDITOR</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ALPHA MODEL MARKDOWN EDITOR (v1.3.0)</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: #f4f4f9;
-      color: #333;
-      transition: background-color 0.3s, color 0.3s;
+    :root {
+      --left-pane: 50%;
+      --handle-w: 8px;
+      --bg: #f7f8fb;
+      --fg: #1f2937;
+      --muted: #6b7280;
+      --brand: #4f46e5;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --toolbar-h: 52px; /* synced with left toolbar */
     }
-    header {
-      background-color: #6200ee;
-      color: white;
-      padding: 10px 20px;
-      text-align: center;
-      font-size: 1.5em;
+    body.dark { 
+      --bg:#0f172a; 
+      --fg:#e5e7eb; 
+      --muted:#9ca3af; 
+      --brand:#8b5cf6; 
+      --card:#0b1220; 
+      --border:#334155; 
     }
-    .controls {
-      display: flex;
-      justify-content: space-between;
-      padding: 10px 20px;
-      background-color: #f4f4f9;
-      border-bottom: 1px solid #ddd;
+
+    *{ box-sizing: border-box; }
+    html, body{ height:100%; }
+    body{
+      margin:0; background:var(--bg); color:var(--fg);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      -webkit-font-smoothing: antialiased;
     }
-    .controls button, .controls input[type="file"] {
-      padding: 8px 12px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      margin-right: 10px;
+
+    header{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 16px; color:#fff;
+      background: linear-gradient(90deg, var(--brand), #7c3aed);
     }
-    .controls button:hover {
-      background-color: #ddd;
+    header .title{ font-weight:700; letter-spacing:.2px; }
+
+    .topbar{
+      display:flex; align-items:center; gap:8px;
+      padding:10px 12px; background:var(--card);
+      border-bottom:1px solid var(--border);
+      position:relative; z-index: 6;
     }
-    .container {
-      display: flex;
-      flex-direction: row;
-      height: calc(100vh - 120px);
+    .seg{ display:inline-flex; border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+    .seg button{
+      border:0; background:transparent; padding:6px 12px; font-size:14px; cursor:pointer; color:var(--muted);
     }
-    textarea, .preview {
-      flex: 1;
-      padding: 10px;
-      border: 1px solid #ddd;
-      resize: none;
-      overflow-y: auto;
+    .seg button.active{ background:var(--brand); color:#fff; }
+
+    .btn{ border:1px solid var(--border); background:var(--card); color:var(--fg); padding:6px 10px; border-radius:8px; cursor:pointer; font-size:14px; }
+    .btn:hover{ background:rgba(0,0,0,.04); }
+    body.dark .btn:hover{ background:rgba(255,255,255,.06); }
+    .spacer{ flex:1; }
+
+    .container{ height: calc(100vh - 144px); display:grid; grid-template-columns: var(--left-pane) var(--handle-w) 1fr; }
+
+    /* left editor */
+    #editorPane{ display:flex; flex-direction:column; overflow:hidden; border-right:1px solid var(--border); background:var(--card); }
+    .editor-toolbar{
+      position:sticky; top:0; z-index:5; min-height:var(--toolbar-h);
+      display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:8px 10px;
+      background:var(--card); border-bottom:1px solid var(--border);
     }
-    textarea {
-      border-right: 1px solid #ddd;
+    .editor-toolbar .sep{ width:1px; height:24px; background:var(--border); margin:0 4px; }
+    .editor-toolbar button, .editor-toolbar select{
+      border:1px solid var(--border); background:var(--card); color:var(--fg);
+      padding:6px 8px; border-radius:8px; cursor:pointer; font-size:13px;
     }
-    .preview {
-      background-color: white;
+    .editor-toolbar button:hover{ background:rgba(0,0,0,.04); }
+    body.dark .editor-toolbar button:hover{ background:rgba(255,255,255,.06); }
+
+    #markdownInput{
+      width:100%; height:100%; border:0; outline:none; resize:none;
+      padding:14px 16px 64px; background:var(--card); color:var(--fg);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New";
+      font-size:14px; line-height:1.6; tab-size:2;
     }
-    .dark-mode {
-      background-color: #333;
-      color: #ddd;
-    }
-    .dark-mode .preview {
-      background-color: #444;
-    }
-    table {
-      border-collapse: collapse;
-      border: 1px solid #ddd;
-    }
-    th, td {
-      border: 1px solid #ddd;
-      padding: 8px;
-    }
-    .dark-mode table {
-      border-color: #ccc;
-    }
-    .dark-mode th, .dark-mode td {
-      border-color: #ccc;
-      color: #ccc;
-    }
-    .resize-handle {
-      width: 6px;
-      background-color: #ddd;
-      cursor: col-resize;
-      flex-shrink: 0;
-    }
-    footer {
-      text-align: center;
-      padding: 10px;
-      background-color: #6200ee;
-      color: white;
+
+    .resize-handle{ width:var(--handle-w); cursor: col-resize; background: repeating-linear-gradient(90deg, var(--border), var(--border) 1px, transparent 1px, transparent 4px); }
+
+    /* right preview */
+    #htmlPreview{ background:var(--card); overflow:auto; position:relative; }
+    .preview-toolbar{ position:sticky; top:0; z-index:5; min-height:var(--toolbar-h); display:flex; align-items:center; justify-content:flex-end; gap:8px; padding:8px 10px; background:var(--card); border-bottom:1px solid var(--border); }
+    #previewContent{ padding: 20px 28px 64px; }
+
+    /* markdown styling */
+    #previewContent :where(h1,h2,h3,h4,h5,h6){ border-bottom:1px solid var(--border); padding-bottom:.3em; }
+    #previewContent h1{ font-size:1.8rem; }
+    #previewContent h2{ font-size:1.5rem; }
+    #previewContent h3{ font-size:1.25rem; }
+    #previewContent pre{ background:rgba(127,127,127,.1); padding:12px; border-radius:8px; overflow:auto; }
+    #previewContent code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New"; }
+    #previewContent blockquote{ margin:0; border-left:4px solid var(--border); padding:6px 12px; color:var(--muted); }
+    #previewContent table{ border-collapse:collapse; width:100%; }
+    #previewContent th, #previewContent td{ border:1px solid var(--border); padding:8px; text-align:left; }
+    #previewContent a{ color:#2563eb; }
+
+    .status{ position:fixed; left:12px; bottom:8px; font-size:12px; color:var(--muted); display:flex; gap:12px; }
+
+    /* modes */
+    .mode-edit .container{ grid-template-columns: 1fr; }
+    .mode-edit .resize-handle, .mode-edit #htmlPreview{ display:none; }
+    .mode-preview .container{ grid-template-columns: 1fr; }
+    .mode-preview .resize-handle, .mode-preview #editorPane{ display:none; }
+
+    /* menu */
+    .menu{ position:relative; }
+    .dropdown{ position:absolute; right:0; top:40px; background:var(--card); border:1px solid var(--border); border-radius:10px; min-width:220px; box-shadow:0 10px 30px rgba(0,0,0,.18); display:none; z-index:10; }
+    .dropdown .item, .dropdown label{ width:100%; display:flex; gap:8px; align-items:center; justify-content:space-between; padding:8px 10px; border:0; background:transparent; cursor:pointer; font-size:14px; color:var(--fg); }
+    .dropdown .item:hover{ background:rgba(0,0,0,.05); }
+    body.dark .dropdown .item:hover{ background:rgba(255,255,255,.06); }
+
+    @media print{
+      header, .topbar, .status, #editorPane, .resize-handle, .preview-toolbar { display:none !important; }
+      .container{ grid-template-columns: 1fr !important; }
+      #htmlPreview{ display:block !important; }
+      #previewContent{ padding:0 !important; }
     }
   </style>
 </head>
-<body>
-  <header>ALPHA MODEL MARKDOWN EDITOR (v1.2.3)</header>
-  <div class="controls">
-    <div>
-      <button id="loadSample">Load Sample</button>
-      <button id="copyMarkdown">Copy Markdown</button>
-      <input type="file" id="loadFile" accept=".md">
-      <button id="saveMarkdown">Save Markdown</button>
-      <button id="saveHTML">Save HTML</button>
-      <button id="saveAll">Save Markdown & HTML</button>
+<body class="mode-split">
+  <header>
+    <div class="title">ALPHA MODEL MARKDOWN EDITOR <small>(v1.3.0)</small></div>
+    <div class="seg" role="tablist" aria-label="ビュー切替">
+      <button id="modeEdit" class="active" role="tab" aria-selected="true">編集</button>
+      <button id="modeSplit" role="tab" aria-selected="false">分割</button>
+      <button id="modePreview" role="tab" aria-selected="false">プレビュー</button>
     </div>
-    <button id="toggleTheme">Toggle Dark Mode</button>
-  </div>
-  <div class="container">
-    <textarea id="markdownInput" placeholder="Write your Markdown here..."></textarea>
-    <div class="resize-handle"></div>
-    <div id="htmlPreview" class="preview"></div>
-  </div>
-  <footer>&copy; 2024 Markdown Editor</footer>
+  </header>
 
-  <!-- 必要なスクリプトを読み込む -->
+  <div class="topbar">
+    <button id="openBtn" class="btn">開く</button>
+    <button id="saveBtn" class="btn" title="Markdownのみ保存 (⌘/Ctrl+S)">保存</button>
+    <div class="spacer"></div>
+    <button id="themeBtn" class="btn" title="テーマ切替">🌓</button>
+    <div class="menu">
+      <button id="menuBtn" class="btn" aria-haspopup="true" aria-expanded="false">⋮</button>
+      <div id="menuDropdown" class="dropdown" role="menu">
+        <button class="item" id="newDoc" role="menuitem">新規</button>
+        <button class="item" id="saveMD" role="menuitem">MDのみ保存</button>
+        <button class="item" id="saveHTML" role="menuitem">HTMLのみ保存</button>
+        <button class="item" id="saveBoth" role="menuitem">MD+HTML保存</button>
+        <button class="item" id="copyMD" role="menuitem">MDをコピー</button>
+        <button class="item" id="copyHTML" role="menuitem">HTMLをコピー</button>
+        <label class="item" title="Markdown内の生HTMLを無効化">
+          <span>サニタイズ（推奨）</span>
+          <input type="checkbox" id="sanitizeHtml" checked />
+        </label>
+        <label class="item" title="エディタとプレビューを同期スクロール">
+          <span>スクロール同期</span>
+          <input type="checkbox" id="scrollSync" checked />
+        </label>
+      </div>
+    </div>
+    <input type="file" id="loadFile" accept=".md" style="display:none" />
+  </div>
+
+  <div class="container">
+    <!-- Left / Editor -->
+    <section id="editorPane" aria-label="エディタ">
+      <div class="editor-toolbar" aria-label="書式とテンプレート">
+        <button data-act="bold" title="太字 (⌘/Ctrl+B)"><b>B</b></button>
+        <button data-act="italic" title="斜体 (⌘/Ctrl+I)"><i>I</i></button>
+        <button data-act="h1" title="見出し1">H1</button>
+        <button data-act="h2" title="見出し2">H2</button>
+        <button data-act="link" title="リンク">🔗</button>
+        <button data-act="ul" title="箇条書き">• List</button>
+        <button data-act="ol" title="番号リスト">1. List</button>
+        <button data-act="code" title="コード (⌘/Ctrl+E)">```</button>
+        <span class="sep" aria-hidden="true"></span>
+        <select id="templateSelect" title="テンプレート">
+          <option value="">テンプレート…</option>
+          <option value="minutes">会議メモ</option>
+          <option value="readme">README</option>
+          <option value="check">チェックリスト</option>
+          <option value="table">表のひな型</option>
+          <option value="m_flow">Mermaid: フローチャート</option>
+          <option value="m_seq">Mermaid: シーケンス図</option>
+          <option value="toc">目次 [TOC]</option>
+        </select>
+        <button id="insertTemplate">挿入</button>
+      </div>
+      <textarea id="markdownInput" placeholder="ここにMarkdownを入力"></textarea>
+    </section>
+
+    <div class="resize-handle" role="separator" aria-orientation="vertical" aria-label="リサイズ"></div>
+
+    <!-- Right / Preview -->
+    <section id="htmlPreview" class="preview" aria-label="プレビュー">
+      <div id="previewToolbar" class="preview-toolbar">
+        <button id="printBtn" class="btn" title="プレビューを印刷 / PDF 保存">🖨️ 印刷</button>
+      </div>
+      <div id="previewContent"></div>
+    </section>
+  </div>
+
+  <div class="status">
+    <span id="statLines">0 行</span>
+    <span id="statWords">0 語</span>
+    <span id="statSaved">未保存</span>
+  </div>
+
+  <!-- Offline dependencies -->
   <script src="./marked.min.js"></script>
   <script src="./mermaid.min.js"></script>
 
   <script>
-    function getHTML(innerHTML) {
-      const htmlContent = 
-      `
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Markdown Preview</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0 auto;
-      padding: 0;
-      max-width: 70%;
-      background-color: #f4f4f9;
-      color: #333;
-      transition: background-color 0.3s, color 0.3s;
-    }
-    header {
-      background-color: #6200ee;
-      color: white;
-      padding: 10px 20px;
-      text-align: center;
-      font-size: 1.5em;
-    }
-    .controls {
-      display: flex;
-      justify-content: space-between;
-      padding: 10px 20px;
-      background-color: #f4f4f9;
-      border-bottom: 1px solid #ddd;
-    }
-    .controls button, .controls input[type="file"] {
-      padding: 8px 12px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      margin-right: 10px;
-    }
-    .controls button:hover {
-      background-color: #ddd;
-    }
-    .container {
-      display: flex;
-      flex-direction: row;
-      height: calc(100vh - 120px);
-    }
-    textarea, .preview {
-      flex: 1;
-      padding: 10px;
-      border: 1px solid #ddd;
-      resize: none;
-      overflow-y: auto;
-    }
-    textarea {
-      border-right: 1px solid #ddd;
-    }
-    .preview {
-      background-color: white;
-    }
-    .dark-mode {
-      background-color: #333;
-      color: #ddd;
-    }
-    .dark-mode .preview {
-      background-color: #444;
-    }
-    table {
-      border-collapse: collapse;
-      border: 1px solid #ddd;
-    }
-    th, td {
-      border: 1px solid #ddd;
-      padding: 8px;
-    }
-    .dark-mode table {
-      border-color: #ccc;
-    }
-    .dark-mode th, .dark-mode td {
-      border-color: #ccc;
-      color: #ccc;
-    }
-    .resize-handle {
-      width: 6px;
-      background-color: #ddd;
-      cursor: col-resize;
-      flex-shrink: 0;
-    }
-    footer {
-      text-align: center;
-      padding: 10px;
-      background-color: #6200ee;
-      color: white;
-    }
-  </style>
-</head>
-<body>
-  ${innerHTML}
-</body>
-</html>
-`;
-      return htmlContent;
-    }
-      document.addEventListener('DOMContentLoaded', () => {
-        const markdownInput = document.getElementById('markdownInput');
-      const htmlPreview = document.getElementById('htmlPreview');
-      const toggleThemeBtn = document.getElementById('toggleTheme');
-      const loadSampleBtn = document.getElementById('loadSample');
-      const copyMarkdownBtn = document.getElementById('copyMarkdown');
-      const loadFileInput = document.getElementById('loadFile');
-      const saveMarkdownBtn = document.getElementById('saveMarkdown');
-      const saveHTMLBtn = document.getElementById('saveHTML');
-      const saveAllBtn = document.getElementById('saveAll');
-      const resizeHandle = document.querySelector('.resize-handle');
-      let isDragging = false;
-      let startX, startWidth;
+  (function(){
+    const $ = (s,el=document)=>el.querySelector(s);
+    const $$ = (s,el=document)=>Array.from(el.querySelectorAll(s));
 
-      // Mermaidの初期化
-      mermaid.initialize({ startOnLoad: false });
+    const mdInput = $('#markdownInput');
+    const preview = $('#htmlPreview');
+    const previewToolbar = $('#previewToolbar');
+    const previewContent = $('#previewContent');
+    const editorPane = $('#editorPane');
+    const container = $('.container');
+    const handle = $('.resize-handle');
 
-      // MarkdownをHTMLに変換し、Mermaid記法を処理
-      const renderMarkdown = () => {
-        const markdownText = markdownInput.value;
-        let htmlContent = marked.parse(markdownText);
+    const statLines = $('#statLines');
+    const statWords = $('#statWords');
+    const statSaved = $('#statSaved');
 
-        // Mermaid記法を検索して適切に置換
-        htmlContent = htmlContent.replace(
-          /<pre><code class="language-mermaid">([\s\S]*?)<\/code><\/pre>/g,
-          (match, mermaidCode) => {
-            return `<div class="mermaid">${mermaidCode}</div>`;
-          }
-        );
+    const sanitizeChk = $('#sanitizeHtml');
+    const scrollSyncChk = $('#scrollSync');
 
-        // HTMLプレビューに挿入
-        htmlPreview.innerHTML = htmlContent;
+    const LS_LEFT = 'sme-leftwidth';
+    const LS_THEME = 'sme-theme';
 
-        // Mermaid.jsで図を描画
+    // Theme
+    function setTheme(mode){ document.body.classList.toggle('dark', mode==='dark'); try{localStorage.setItem(LS_THEME, mode);}catch{} }
+    $('#themeBtn').addEventListener('click', ()=> setTheme(document.body.classList.contains('dark') ? 'light':'dark'));
+    try{ setTheme(localStorage.getItem(LS_THEME)||'light'); }catch{}
+
+    // Mermaid
+    try{ mermaid.initialize({ startOnLoad:false }); }catch(e){ console.warn('Mermaid init failed',e); }
+
+    // Marked
+    const renderer = new marked.Renderer();
+    function applySanitize(on){ renderer.html = on ? function(){ return ''; } : undefined; }
+    applySanitize(true);
+    marked.setOptions({ gfm:true, breaks:false, mangle:false, headerIds:true, renderer });
+
+    function updateCounts(){
+      const v = mdInput.value; statLines.textContent = (v? v.split(/\n/).length:0) + ' 行'; statWords.textContent = (v.trim()? v.trim().split(/\s+/).length:0) + ' 語';
+    }
+
+    function renderMermaid(){
+      // Convert fenced mermaid → div.mermaid
+      previewContent.innerHTML = previewContent.innerHTML.replace(/<pre><code class="language-mermaid">([\s\S]*?)<\/code><\/pre>/g,
+        (_,code)=>`<div class="mermaid">${code.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&')}</div>`);
+      try{ const nodes=$$('.mermaid', previewContent); if(nodes.length){ mermaid.init(undefined, nodes); } }catch(err){ console.error('Mermaid rendering error:', err); }
+    }
+
+    let raf=0; function render(){
+      if(raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(()=>{
         try {
-          mermaid.init(undefined, htmlPreview.querySelectorAll('.mermaid'));
-        } catch (error) {
-          console.error('Mermaid rendering error:', error);
-        }
-      };
-
-      // 入力欄が変更されるたびにMarkdownをレンダリング
-      markdownInput.addEventListener('input', renderMarkdown);
-
-      // サンプルデータを挿入
-      loadSampleBtn.addEventListener('click', () => {
-        markdownInput.value = `
-# Markdown Editor with Mermaid Support
-
-This editor supports **Mermaid diagrams**. Try this example:
-
-\`\`\`mermaid
-graph TD
-  A[Start] --> B{Decision}
-  B -->|Yes| C[End]
-  B -->|No| D[Do something else]
-\`\`\`
-        `;
-        renderMarkdown();
-      });
-
-      // HTMLをクリップボードにコピー
-      copyMarkdownBtn.addEventListener('click', () => {
-        navigator.clipboard.writeText(markdownInput.value);
-      });
-
-      // Markdownファイルの読み込み
-      loadFileInput.addEventListener('change', (event) => {
-        const file = event.target.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            markdownInput.value = e.target.result;
-            renderMarkdown();
-          };
-          reader.readAsText(file);
-          event.target.value = ''; // リセット
+          const md = mdInput.value;
+          previewContent.innerHTML = marked.parse(md);
+          renderMermaid();
+          updateCounts();
+          syncToolbarHeights();
+        } catch(err){
+          previewContent.innerHTML = '<pre>レンダリングエラー: ' + String(err) + '</pre>';
         }
       });
+    }
+    // ← render() 関数の定義後 or 初期化ブロックのどこかで
+    mdInput.addEventListener('input', render);          // タイプのたびにプレビュー更新（必須）
+    mdInput.addEventListener('compositionend', render); // 日本語IME確定時にも確実に更新（推奨）
+    mdInput.addEventListener('paste', () => requestAnimationFrame(render)); // 貼り付け直後に更新（推奨）
 
-      // Markdownをファイルとして保存
-      saveMarkdownBtn.addEventListener('click', () => {
-        const blob = new Blob([markdownInput.value], { type: 'text/markdown' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'markdown.md';
-        a.click();
-        URL.revokeObjectURL(a.href);
-      });
 
-      // HTMLをファイルとして保存
-      saveHTMLBtn.addEventListener('click', () => {
-        const blob = new Blob([getHTML(htmlPreview.innerHTML)], { type: 'text/html' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'preview.html';
-        a.click();
-        URL.revokeObjectURL(a.href);
-      });
+    // Sync toolbar heights: right toolbar matches left toolbar height
+    function syncToolbarHeights(){
+      const tb = document.querySelector('.editor-toolbar');
+      const h = tb ? Math.ceil(tb.getBoundingClientRect().height) : 44;
+      document.documentElement.style.setProperty('--toolbar-h', h + 'px');
+      if(previewToolbar) previewToolbar.style.minHeight = h + 'px';
+    }
+    window.addEventListener('resize', syncToolbarHeights);
 
-      // 上書き保存機能
-      const saveAll = () => {
-        const markdownBlob = new Blob([markdownInput.value], { type: 'text/markdown' });
-        const htmlBlob = new Blob([getHTML(htmlPreview.innerHTML)], { type: 'text/html' });
-        const markdownUrl = URL.createObjectURL(markdownBlob);
-        const htmlUrl = URL.createObjectURL(htmlBlob);
+    // Modes
+    const seg = { edit: $('#modeEdit'), split: $('#modeSplit'), prev: $('#modePreview') };
+    function setMode(mode){
+      document.body.classList.remove('mode-edit','mode-split','mode-preview');
+      if(mode==='edit'){ document.body.classList.add('mode-edit'); activate(seg.edit); }
+      else if(mode==='preview'){ document.body.classList.add('mode-preview'); activate(seg.prev); }
+      else { document.body.classList.add('mode-split'); activate(seg.split); }
+      syncToolbarHeights();
+    }
+    function activate(btn){
+      [seg.edit, seg.split, seg.prev].forEach(b=>{ b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+      btn.classList.add('active'); btn.setAttribute('aria-selected','true');
+    }
+    seg.edit.addEventListener('click', ()=> setMode('edit'));
+    seg.split.addEventListener('click', ()=> setMode('split'));
+    seg.prev.addEventListener('click', ()=> setMode('preview'));
+    setMode('split');
 
-        const markdownLink = document.createElement('a');
-        markdownLink.href = markdownUrl;
-        markdownLink.download = 'markdown.md';
+    // Resize handle (persistent width)
+    let drag=null; handle.addEventListener('mousedown',e=>{ drag={x:e.clientX, w: editorPane.getBoundingClientRect().width}; document.body.style.userSelect='none'; });
+    window.addEventListener('mousemove',e=>{ if(!drag) return; const dx=e.clientX-drag.x; const cw=container.getBoundingClientRect().width; const minL=240, minR=280; let w=Math.max(minL, Math.min(drag.w+dx, cw-minR)); document.documentElement.style.setProperty('--left-pane', w+'px'); try{localStorage.setItem(LS_LEFT,String(w));}catch{} });
+    window.addEventListener('mouseup',()=>{ drag=null; document.body.style.userSelect=''; });
+    handle.addEventListener('dblclick',()=>{ document.documentElement.style.setProperty('--left-pane','50%'); try{localStorage.setItem(LS_LEFT,'50%');}catch{} });
+    try{ const left=localStorage.getItem(LS_LEFT); if(left) document.documentElement.style.setProperty('--left-pane', left.match(/%|px/)? left : left+'px'); }catch{}
 
-        const htmlLink = document.createElement('a');
-        htmlLink.href = htmlUrl;
-        htmlLink.download = 'preview.html';
+    // File open/save/copy
+    function filenameFromDoc(){ const m=mdInput.value.match(/^\s*#\s+(.+)$/m); const title=m?m[1].trim():'document'; const dt=new Date(); const p=[dt.getFullYear(), String(dt.getMonth()+1).padStart(2,'0'), String(dt.getDate()).padStart(2,'0')].join(''); return title.toLowerCase().replace(/[^a-z0-9\u3040-\u30ff\u4e00-\u9faf\s-]/g,'').trim().replace(/\s+/g,'-')+'_'+p; }
+    function saveBlob(text, type, name){ const b=new Blob([text],{type}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=name; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href); statSaved.textContent='保存しました'; }
+    function getWrappedHTML(){ const inner=previewContent.innerHTML; const css=`body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;max-width:860px;margin:40px auto;padding:0 24px;color:#111;background:#fff} .preview :where(h1,h2,h3,h4,h5,h6){border-bottom:1px solid #e5e7eb;padding-bottom:.3em} pre{background:#f5f5f7;padding:12px;border-radius:8px;overflow:auto} code{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,\"Liberation Mono\",\"Courier New\"} blockquote{margin:0;border-left:4px solid #e5e7eb;padding:6px 12px;color:#555} table{border-collapse:collapse;width:100%} th,td{border:1px solid #e5e7eb;padding:8px;text-align:left}`; return `<!DOCTYPE html><html lang=\"ja\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>${document.title.replace(/</g,'&lt;')}</title><style>${css}</style></head><body class=\"preview\">${inner}</body></html>`; }
 
-        markdownLink.click();
-        htmlLink.click();
+    $('#openBtn').addEventListener('click', ()=> $('#loadFile').click());
+    $('#loadFile').addEventListener('change', (e)=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=ev=>{ mdInput.value=ev.target.result; render(); }; r.readAsText(f); e.target.value=''; statSaved.textContent='未保存'; });
 
-        URL.revokeObjectURL(markdownUrl);
-        URL.revokeObjectURL(htmlUrl);
-      };
+    function saveMD(){ saveBlob(mdInput.value,'text/markdown', filenameFromDoc()+'.md'); }
+    function saveHTML(){ saveBlob(getWrappedHTML(),'text/html', filenameFromDoc()+'.html'); }
+    function saveBoth(){ saveMD(); saveHTML(); }
 
-      // ダークモードの切り替え
-      toggleThemeBtn.addEventListener('click', () => {
-        document.body.classList.toggle('dark-mode');
-        toggleThemeBtn.textContent = document.body.classList.contains('dark-mode')
-          ? 'Toggle Light Mode'
-          : 'Toggle Dark Mode';
-      });
+    $('#saveBtn').addEventListener('click', saveMD);
+    $('#saveMD').addEventListener('click', saveMD);
+    $('#saveHTML').addEventListener('click', saveHTML);
+    $('#saveBoth').addEventListener('click', saveBoth);
 
-      // 左右ペインの比率変更
-      resizeHandle.addEventListener('mousedown', (event) => {
-        isDragging = true;
-        startX = event.clientX;
-        startWidth = htmlPreview.offsetWidth;
-      });
+    $('#copyMD').addEventListener('click', ()=> navigator.clipboard.writeText(mdInput.value));
+    $('#copyHTML').addEventListener('click', ()=> navigator.clipboard.writeText(getWrappedHTML()));
 
-      document.addEventListener('mousemove', (event) => {
-        if (!isDragging) return;
-        const delta = event.clientX - startX;
-        const newWidth = Math.max(100, startWidth + delta);
-        htmlPreview.style.width = `${newWidth}px`;
-      });
+    $('#newDoc').addEventListener('click', ()=>{ if(confirm('内容をクリアしますか？')){ mdInput.value=''; render(); statSaved.textContent='未保存'; }});
 
-      document.addEventListener('mouseup', () => {
-        isDragging = false;
-      });
+    // Menu toggle
+    const menuBtn=$('#menuBtn'), menu=$('#menuDropdown');
+    menuBtn.addEventListener('click', ()=>{ const open=menu.style.display==='block'; menu.style.display=open?'none':'block'; menuBtn.setAttribute('aria-expanded', String(!open)); });
+    document.addEventListener('click', (e)=>{ if(!menu.contains(e.target) && e.target!==menuBtn) menu.style.display='none'; });
 
-      // ショートカットキーの設定
-      document.addEventListener('keydown', (event) => {
-        if (event.ctrlKey || event.metaKey) {
-          if (event.key === 's') {
-            event.preventDefault();
-            saveAll();
-          } else if (event.key === 'o') {
-            event.preventDefault();
-            loadFileInput.click();
-          }
-        }
-      });
+    // Toggles
+    sanitizeChk.addEventListener('change', ()=>{ applySanitize(sanitizeChk.checked); render(); });
 
-      // 上書き保存ボタンの追加
-      saveAllBtn.addEventListener('click', saveAll);
+    // Scroll sync (split mode only)
+    let syncing = null; // 'editor' | 'preview' | null
+    function syncFromEditor(){
+      if(!(scrollSyncChk && scrollSyncChk.checked)) return;
+      if(document.body.classList.contains('mode-edit') || document.body.classList.contains('mode-preview')) return;
+      if(syncing==='preview') return; syncing='editor';
+      const ratio = mdInput.scrollTop / ((mdInput.scrollHeight - mdInput.clientHeight) || 1);
+      preview.scrollTop = ratio * (preview.scrollHeight - preview.clientHeight);
+      syncing=null;
+    }
+    function syncFromPreview(){
+      if(!(scrollSyncChk && scrollSyncChk.checked)) return;
+      if(document.body.classList.contains('mode-edit') || document.body.classList.contains('mode-preview')) return;
+      if(syncing==='editor') return; syncing='preview';
+      const ratio = preview.scrollTop / ((preview.scrollHeight - preview.clientHeight) || 1);
+      mdInput.scrollTop = ratio * (mdInput.scrollHeight - mdInput.clientHeight);
+      syncing=null;
+    }
+    mdInput.addEventListener('scroll', syncFromEditor);
+    preview.addEventListener('scroll', syncFromPreview);
 
-      // 初期レンダリング
-      renderMarkdown();
+    // Formatting & templates
+    function wrapSelection(before, after = before, placeholder = ''){
+      const el = mdInput; el.focus(); const s=el.selectionStart, e=el.selectionEnd; const sel=el.value.slice(s,e) || placeholder; el.setRangeText(before+sel+after, s, e, 'end'); render(); }
+    function insertBlock(text){ const el=mdInput; el.focus(); const s=el.selectionStart; const pre=el.value.slice(0,s); const suf=el.value.slice(s); const needNL = pre && !pre.endsWith('\n'); const ins=(needNL?'\n':'')+text+(text.endsWith('\n')?'':'\n'); el.value = pre + ins + suf; el.selectionStart = el.selectionEnd = (pre + ins).length; render(); }
+
+    const TPL={
+      minutes:`# 会議メモ\n- 日時: ${new Date().toLocaleString()}\n- 出席: \n\n## 決定事項\n- \n\n## アクション\n- [ ] 担当: 期限: 内容:\n`,
+      readme:`# プロジェクト名\n簡単な説明…\n\n## 使い方\n\n\`\`\`bash\n# 例\n\`\`\`\n`,
+      check:`# チェックリスト\n- [ ] 項目1\n- [ ] 項目2\n`,
+      table:`| 項目 | 値 | 備考 |\n|---|---:|---|\n| A | 0 |  |\n| B | 0 |  |\n`,
+      m_flow:`\n\`\`\`mermaid\ngraph TD\n  A[Start] --> B{Decision}\n  B -->|Yes| C[End]\n  B -->|No| D[Else]\n\n\`\`\`\n`,
+      m_seq:`\n\`\`\`mermaid\nsequenceDiagram\n  participant ユーザー\n  participant システム\n  ユーザー->>システム: リクエスト\n  システム-->>ユーザー: レスポンス\n\n\`\`\`\n`,
+      toc:`[TOC]\n\n`
+    };
+
+    $('.editor-toolbar').addEventListener('click', (e)=>{
+      const act = e.target.getAttribute('data-act'); if(!act) return;
+      if(act==='bold') return wrapSelection('**','**','太字');
+      if(act==='italic') return wrapSelection('*','*','斜体');
+      if(act==='h1') return insertBlock('\n# 見出し\n');
+      if(act==='h2') return insertBlock('\n## 見出し\n');
+      if(act==='link') return wrapSelection('[','](https://)','テキスト');
+      if(act==='ul') return insertBlock('- 項目\n- 項目\n- 項目\n');
+      if(act==='ol') return insertBlock('1. 項目\n2. 項目\n3. 項目\n');
+      if(act==='code') return insertBlock('\n```\ncode\n```\n');
     });
+
+    $('#insertTemplate').addEventListener('click', ()=>{ const key=$('#templateSelect').value; if(!key) return; insertBlock(TPL[key]||''); $('#templateSelect').value=''; });
+
+    // Shortcuts
+    document.addEventListener('keydown', (e)=>{
+      const meta = e.ctrlKey || e.metaKey;
+      if(meta && e.key.toLowerCase()==='s'){ e.preventDefault(); saveMD(); }
+      if(meta && e.key.toLowerCase()==='o'){ e.preventDefault(); $('#loadFile').click(); }
+      if(meta && e.key.toLowerCase()==='b'){ e.preventDefault(); wrapSelection('**','**','太字'); }
+      if(meta && e.key.toLowerCase()==='i'){ e.preventDefault(); wrapSelection('*','*','斜体'); }
+      if(meta && e.key.toLowerCase()==='e'){ e.preventDefault(); insertBlock('\n```\ncode\n```\n'); }
+    });
+
+    // Print (always preview only)
+    $('#printBtn').addEventListener('click', ()=> window.print());
+
+    // Initial
+    syncToolbarHeights();
+    render();
+  })();
   </script>
 </body>
 </html>
